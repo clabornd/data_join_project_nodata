@@ -1,0 +1,13 @@
+name: data-join-project
+title: Data-Join-Project
+username:
+account: clabornd
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 217263
+bundleId: 991652
+url: https://clabornd.shinyapps.io/data-join-project/
+when: 1506029659.62584
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|join.R|join.Rexec|Data/Jobvite FY17_Final_Data.csv|Data/Jobvite FY17_Final_Data.xlsx|Data/Jobvite Hired Candidate Report.csv.xlsx|Data/joined_data.csv|Data/joined_data_no_nas.csv|Data/nuview_jobvite_left_join.csv|Data/rramonesadmin_export.csv|Data/rramonesadmin_exportA.csv

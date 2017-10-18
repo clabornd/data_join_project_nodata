@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "source(\"Auxiliary/requirements.R\")\n\n#split complicated names to compare each part to full name in jobvite\nsplit_and_combine <- function(x){\n  paste(unlist(strsplit(x, split = \" |\\\\-\")), collapse = \"|\")\n}\n\ngroup_nuview <- function(nuview_data, truncdate){\n  nuview_data %>% group_by(Emp) %>% \n  unique() %>% ungroup() %>%\n  mutate(EmlEffDt = as.Date(EmlEffDt, format = '%m/%d/%Y')) %>%\n  filter(EmlEffDt >= truncdate) %>%\n  group_by(Pos) %>%\n  top_n(-1, EmlEffDt) %>% slice(1)\n}\n\nclean_jobvite <- function(jobvite_data){\n  jobvite_data %>% group_by(Application_Id) %>% \n  unique() %>% \n  ungroup %>%\n  mutate(Candidate_Full_Name = iconv(Candidate_Full_Name, to = 'ASCII//TRANSLIT'),\n         Candidate_Hire_Date = as.Date(Candidate_Hire_Date)) %>%\n  filter(!is.na(Application_Id))\n}\n\n###match and populate the jobvite_id field in the nuview data\nfill_nuview_collapsed <- function(collapsed_nuview, jobvite_data){\n\n  collapsed_nuview$jobvite_id <- NA\n  \n  ############\n  for(i in 1:nrow(collapsed_nuview)){\n    #If after checks, length is zero, there were no matching records.\n    if(nrow(jobvite_data %>% \n            filter(grepl(split_and_combine(collapsed_nuview[i,]$FirstName), gsub(\"[[:punct:]]+\", \"\", Candidate_Full_Name), ignore.case = TRUE) == TRUE &\n                   grepl(split_and_combine(collapsed_nuview[i,]$LastName), gsub(\"[[:punct:]]+\", \"\", Candidate_Full_Name), ignore.case = TRUE) == TRUE &\n                   Candidate_Hire_Date <= collapsed_nuview[i,]$EmlEffDt\n            ) %>% \n            ###Get most recent job\n            filter(Candidate_Hire_Date == max(Candidate_Hire_Date))\n    )!= 0){\n      #If matches are found append application ID.\n      collapsed_nuview[i,]$jobvite_id <- \n        as.integer((jobvite_data %>% \n                      filter(grepl(split_and_combine(collapsed_nuview[i,]$FirstName), gsub(\"[[:punct:]]+\", \"\", Candidate_Full_Name), ignore.case = TRUE) == TRUE &\n                               grepl(split_and_combine(collapsed_nuview[i,]$LastName), gsub(\"[[:punct:]]+\", \"\", Candidate_Full_Name), ignore.case = TRUE) == TRUE &\n                               Candidate_Hire_Date <= collapsed_nuview[i,]$EmlEffDt\n                      ) %>% \n                      ###Get most recent job\n                      filter(Candidate_Hire_Date == max(Candidate_Hire_Date)) %>%\n                      filter(Requisition_Created_On == max(Requisition_Created_On)))$Application_Id\n        ) \n      }\n    }\n\n  collapsed_nuview\n}",
+    "created" : 1507745529581.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3036309538",
+    "id" : "13D607B9",
+    "lastKnownWriteTime" : 1506970724,
+    "last_content_update" : 1506970724,
+    "path" : "~/Data Join Project/Auxiliary/functions.R",
+    "project_path" : "Auxiliary/functions.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,58 @@
+source("Auxiliary/requirements.R")
+###########Load, Check, Clean#########
+
+jobvite_data <- read_excel(tk_choose.files(caption = "Select Jobvite Data"))
+nuview_data <- read_csv(tk_choose.files(caption = "Select NuView Data"))
+
+#duplicate check, change to datetime, arrange columns, filter for recent dates
+jobvite_data <- jobvite_data %>% group_by(Application_Id) %>% 
+    unique() %>% 
+    ungroup %>%
+    arrange(Candidate_Full_Name, Candidate_Hire_Date) 
+
+nuview_data <- nuview_data %>% group_by(Emp) %>% 
+  unique() %>%
+  mutate(EmlEffDt = as.Date(EmlEffDt, format = '%m/%d/%Y')) %>%
+  filter(year(EmlEffDt) >= 2016)
+
+nuview_data$jobvite_id <- NA
+
+iter <- 0
+
+for(i in 1:nrow(nuview_data)){
+    nuview_data[i,]$jobvite_id <- 
+    ifelse(
+        length(
+          (jobvite_data %>% 
+            filter(
+              grepl(paste(unlist(strsplit(nuview_data[i,]$FirstName, split = " ")), collapse = "|"), Candidate_Full_Name, ignore.case = TRUE) == TRUE,
+              grepl(paste(unlist(strsplit(nuview_data[i,]$LastName, split = " ")), collapse = "|"), Candidate_Full_Name, ignore.case = TRUE) == TRUE,
+              Candidate_Hire_Date < nuview_data[i,]$EmlEffDt
+              ) %>% 
+            filter(Candidate_Hire_Date == max(Candidate_Hire_Date)))$Application_Id
+          ) == 0,
+    NA,
+    (jobvite_data %>% 
+       filter(
+         grepl(paste(unlist(strsplit(nuview_data[i,]$FirstName, split = " ")), collapse = "|"), Candidate_Full_Name, ignore.case = TRUE) == TRUE,
+         grepl(paste(unlist(strsplit(nuview_data[i,]$LastName, split = " ")), collapse = "|"), Candidate_Full_Name, ignore.case = TRUE) == TRUE,
+         Candidate_Hire_Date < nuview_data[i,]$EmlEffDt
+       ) %>% 
+       filter(Candidate_Hire_Date == max(Candidate_Hire_Date)))$Application_Id
+    )
+    print(iter)
+    iter <- iter + 1
+}
+
+###Join by ID
+fulldata <- nuview_data %>% left_join(jobvite_data, by = c("jobvite_id"="Application_Id")) %>% filter(!is.na(jobvite_id))
+write_csv(nuview_data, "Data/joined_data.csv")
+
+###TEST BLOCKS###
+#which(nuview_data$FirstName == "Adrienne" & nuview_data$LastName == "Brooks")
+#split_names <- jobvite_data$Candidate_Full_Name %>% map(~unlist(strsplit(.x, split = " ")))
+
+
+
+
+

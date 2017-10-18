@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "source(\"Auxiliary/requirements.R\")\nsource(\"Auxiliary/functions.R\")\n###########Load, Check, Clean#########\n\njobvite_data <- read_csv(tk_choose.files(caption = \"Select Jobvite Data in CSV format\"))\nnuview_data <- read_csv(tk_choose.files(caption = \"Select NuView Data in CSV format\"))\n\n#duplicate check, change to datetime, collapse nuview, filter for recent dates\njobvite_data <- clean_jobvite(jobvite_data)\ncollapsed_nuview <- group_nuview(nuview_data, min(jobvite_data$Candidate_Hire_Date))\n\ncollapsed_nuview <- fill_nuview_collapsed(collapsed_nuview, jobvite_data)\n\n\n#### JOINS ####\nnuview_lj_jobvite <- nuview_data %>% \n                    mutate(PosEffDt = as.Date(PosEffDt, format = '%m/%d/%Y')) %>%\n                    left_join(collapsed_nuview %>% select(jobvite_id, Pos), by = \"Pos\") %>% \n                    left_join(jobvite_data, by = c(\"jobvite_id\" = \"Application_Id\")) %>%\n                    filter(PosEffDt >= min(jobvite_data$Candidate_Hire_Date))\n\njobvite_not_nuview <- jobvite_data %>% \n                      left_join(nuview_lj_jobvite, by = c(\"Application_Id\" = \"jobvite_id\")) %>% \n                      filter(is.na(Emp)) %>%\n                      distinct(Application_Id) %>%\n                      left_join(jobvite_data, by = \"Application_Id\")\n\nnuview_not_jobvite <- nuview_lj_jobvite %>% \n                      filter(is.na(jobvite_id)) %>% \n                      distinct(Emp) %>%\n                      left_join(nuview_data, by = \"Emp\") \n\n\n###Check for values that are in jobvite but not nuview\ncrosscheck <- jobvite_data %>% left_join(nuview_lj_jobvite, by = c(\"Application_Id\" = \"jobvite_id\"))\nmissing <- crosscheck %>% filter(is.na(Emp)) %>% select(Application_Id, Candidate_Full_Name, Candidate_Hire_Date, job_jobtype_name, EmlEffDt, Requisition_Country)\n\n###\n\n###Misc Writing\nfull_data <- nuview_data %>% left_join(jobvite_data, by = c(\"jobvite_id\"=\"Application_Id\"))\ncollapsed_data <- full_data %>% filter(!is.na(jobvite_id))\n\nwrite_csv(nuview_lj_jobvite, \"Output/nuview_lj_jobvite.csv\")\nwrite_csv(jobvite_not_nuview, \"Output/jobvite_not_nuview.csv\")\nwrite_csv(nuview_not_jobvite, \"Output/nuview_not_jobvite.csv\")\n\n\n###TEST BLOCKS###\n\n\n\n\n\n\n",
+    "created" : 1507740600021.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3352455312",
+    "id" : "A8664907",
+    "lastKnownWriteTime" : 1507741261,
+    "last_content_update" : 1507741261922,
+    "path" : "~/Data Join Project/join.R",
+    "project_path" : "join.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
